@@ -4,6 +4,9 @@ import '../../core/routes/app_routes.dart';
 import '../../widgets/request_card.dart';
 import '../../widgets/dialogs/request_popup_dialog.dart';
 
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -13,6 +16,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+  bool _isMapExpanded = false;
+  final MapController _mapController = MapController();
 
   void _onItemTapped(int index) {
     setState(() {
@@ -78,94 +83,156 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Map Container
-            Container(
-              height: 280,
-              width: double.infinity,
-              margin: const EdgeInsets.all(AppTheme.defaultPadding),
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: AppTheme.stroke,
-                  width: AppTheme.strokeThin,
-                ),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-              ),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.map,
-                      color: AppTheme.foreground,
-                      size: 48,
+      body: _isMapExpanded
+          ? _buildMapWidget(isExpanded: true)
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Map Container
+                  _buildMapWidget(isExpanded: false),
+                  
+                  // Taleplerim Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, AppRoutes.requestsList);
+                        },
+                        child: const Text('Taleplerim'),
+                      ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
-                      'OPEN STREET MAP',
-                      style: TextStyle(
-                        color: AppTheme.foreground,
-                        fontSize: 16,
+                  ),
+                  const SizedBox(height: AppTheme.spacingLarge),
+                  
+                  // Request Status Section
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
+                        child: Text(
+                          'Aktif Çağrılar',
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            color: AppTheme.foreground,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppTheme.spacingMedium),
+                      
+                      // Sample Request Cards
+                      RequestCard(
+                        hospitalName: 'Şişli Etfal Hastanesi',
+                        bloodType: 'A+',
+                        patientName: 'Mehmet Yılmaz',
+                        onTap: _showRequestDialog,
+                      ),
+                      RequestCard(
+                        hospitalName: 'Bakırköy Dr. Sadi Konuk EAH',
+                        bloodType: '0-',
+                        patientName: 'Ayşe Demir',
+                        onTap: _showRequestDialog,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  Widget _buildMapWidget({required bool isExpanded}) {
+    return Container(
+      height: isExpanded ? double.infinity : 280,
+      width: double.infinity,
+      margin: isExpanded ? EdgeInsets.zero : const EdgeInsets.all(AppTheme.defaultPadding),
+      decoration: BoxDecoration(
+        border: isExpanded ? null : Border.all(
+          color: AppTheme.stroke,
+          width: AppTheme.strokeThin,
+        ),
+        borderRadius: isExpanded ? null : BorderRadius.circular(AppTheme.borderRadius),
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: isExpanded ? BorderRadius.zero : BorderRadius.circular(AppTheme.borderRadius),
+            child: FlutterMap(
+              mapController: _mapController,
+              options: const MapOptions(
+                initialCenter: LatLng(41.0082, 28.9784), // Istanbul
+                initialZoom: 11.0,
+                interactionOptions: InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.kabis',
+                ),
+                const MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: LatLng(41.0082, 28.9784),
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                    ),
+                    Marker(
+                      point: LatLng(41.0422, 29.0077), // Besiktas
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 40,
+                      ),
+                    ),
+                    Marker(
+                      point: LatLng(40.9901, 29.0206), // Kadikoy
+                      width: 40,
+                      height: 40,
+                      child: Icon(
+                        Icons.location_on,
+                        color: Colors.red,
+                        size: 40,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-            
-            // Taleplerim Button
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
-              child: SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, AppRoutes.requestsList);
-                  },
-                  child: const Text('Taleplerim'),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppTheme.spacingLarge),
-            
-            // Request Status Section
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
-                  child: Text(
-                    'Aktif Çağrılar',
-                    textAlign: TextAlign.start,
-                    style: TextStyle(
-                      color: AppTheme.foreground,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTheme.spacingMedium),
-                
-                // Sample Request Cards
-                RequestCard(
-                  hospitalName: 'Şişli Etfal Hastanesi',
-                  bloodType: 'A+',
-                  patientName: 'Mehmet Yılmaz',
-                  onTap: _showRequestDialog,
-                ),
-                RequestCard(
-                  hospitalName: 'Bakırköy Dr. Sadi Konuk EAH',
-                  bloodType: '0-',
-                  patientName: 'Ayşe Demir',
-                  onTap: _showRequestDialog,
-                ),
               ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton.small(
+              heroTag: 'map_toggle',
+              backgroundColor: AppTheme.background,
+              foregroundColor: AppTheme.foreground,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: const BorderSide(color: AppTheme.stroke),
+              ),
+              onPressed: () {
+                setState(() {
+                  _isMapExpanded = !_isMapExpanded;
+                });
+              },
+              child: Icon(isExpanded ? Icons.fullscreen_exit : Icons.fullscreen),
+            ),
+          ),
+        ],
       ),
     );
   }

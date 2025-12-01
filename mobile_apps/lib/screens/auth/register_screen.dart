@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/routes/app_routes.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/dialogs/legal_text_dialog.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -24,10 +25,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _selectedCity;
   String? _selectedDistrict;
   bool _kvkkAccepted = false;
+  bool _aydinlatmaAccepted = false;
 
   final List<String> _bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
   final List<String> _cities = ['İstanbul', 'Ankara', 'İzmir', 'Bursa', 'Antalya'];
   final List<String> _districts = ['Kadıköy', 'Beşiktaş', 'Üsküdar', 'Şişli'];
+
+  void _showLegalDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (context) => LegalTextDialog(title: title, content: content),
+    );
+  }
+
+  final String _kvkkText = """
+Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında, kişisel verileriniz...
+(Buraya uzun KVKK metni gelecek)
+...
+""";
+
+  final String _aydinlatmaText = """
+Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
+(Buraya uzun Aydınlatma metni gelecek)
+...
+""";
 
   @override
   void dispose() {
@@ -206,10 +227,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     checkColor: AppTheme.background,
                     side: const BorderSide(color: AppTheme.foreground),
                   ),
-                  const Expanded(
-                    child: Text(
-                      'KVKK Metni ve Aydınlatma Metnini Onaylıyorum',
-                      style: TextStyle(color: AppTheme.foreground, fontSize: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _showLegalDialog('KVKK Metni', _kvkkText),
+                      child: const Text(
+                        'KVKK Metnini Okudum ve Onaylıyorum',
+                        style: TextStyle(
+                          color: AppTheme.foreground,
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              // Aydınlatma Metni Checkbox
+              Row(
+                children: [
+                  Checkbox(
+                    value: _aydinlatmaAccepted,
+                    onChanged: (value) => setState(() => _aydinlatmaAccepted = value ?? false),
+                    fillColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return AppTheme.foreground;
+                      }
+                      return Colors.transparent;
+                    }),
+                    checkColor: AppTheme.background,
+                    side: const BorderSide(color: AppTheme.foreground),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => _showLegalDialog('Aydınlatma Metni', _aydinlatmaText),
+                      child: const Text(
+                        'Aydınlatma Metnini Okudum ve Onaylıyorum',
+                        style: TextStyle(
+                          color: AppTheme.foreground,
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -221,7 +280,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 52,
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _kvkkAccepted
+                  onPressed: (_kvkkAccepted && _aydinlatmaAccepted)
                       ? () {
                           Navigator.pushReplacementNamed(context, AppRoutes.home);
                         }

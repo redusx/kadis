@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/routes/app_routes.dart';
+import '../../widgets/dialogs/legal_text_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -31,13 +32,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title: const Text('Profil'),
         automaticallyImplyLeading: false,
         actions: [
-          TextButton(
+          IconButton(
             onPressed: () {
               Navigator.pushReplacementNamed(context, AppRoutes.login);
             },
-            child: const Text(
-              'Çıkış Yap',
-              style: TextStyle(color: AppTheme.foreground),
+            icon: const Icon(
+              Icons.logout,
+              color: AppTheme.foreground,
             ),
           ),
         ],
@@ -67,17 +68,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           // Profile Fields
-          _buildProfileField('Ad Soyad', 'Ahmet Yılmaz'),
-          const SizedBox(height: 12),
-          _buildProfileField('Kan Grubu', 'A+'),
-          const SizedBox(height: 12),
-          _buildProfileField('E-posta', 'ahmet@example.com'),
-          const SizedBox(height: 12),
-          _buildProfileField('Telefon', '0532 123 45 67'),
-          const SizedBox(height: 12),
-          _buildProfileField('İl / İlçe', 'İstanbul / Kadıköy'),
-          const SizedBox(height: 12),
-          _buildProfileField('Adres', 'Sokak Adı, Mahalle'),
+          _buildProfileField('Ad Soyad', 'Ahmet Yılmaz', Icons.person_outline),
+          _buildProfileField('Kan Grubu', 'A+', Icons.bloodtype_outlined),
+          _buildProfileField('E-posta', 'ahmet@example.com', Icons.email_outlined),
+          _buildProfileField('Telefon', '0532 123 45 67', Icons.phone_outlined),
+          _buildProfileField('İl / İlçe', 'İstanbul / Kadıköy', Icons.location_city_outlined),
+          _buildProfileField('Adres', 'Sokak Adı, Mahalle', Icons.home_outlined),
           const SizedBox(height: 20),
           
           // Taleplerim Button
@@ -95,13 +91,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Notification Switch
           Container(
             decoration: BoxDecoration(
-              border: Border.all(color: AppTheme.stroke, width: AppTheme.strokeThin),
+              color: AppTheme.foreground.withOpacity(0.05),
+              border: Border.all(color: AppTheme.stroke.withOpacity(0.3), width: AppTheme.strokeThin),
               borderRadius: BorderRadius.circular(AppTheme.borderRadius),
             ),
             child: SwitchListTile(
+              secondary: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.foreground.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.notifications_outlined, color: AppTheme.foreground),
+              ),
               title: const Text(
-                'Bildirimleri Aç/Kapat',
-                style: TextStyle(color: AppTheme.foreground),
+                'Bildirimler',
+                style: TextStyle(color: AppTheme.foreground, fontWeight: FontWeight.w600),
               ),
               value: _notificationsEnabled,
               onChanged: (value) {
@@ -118,7 +123,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // KVKK Link
           TextButton(
             onPressed: () {
-              // TODO: Show KVKK text
+              _showLegalDialog(context, 'KVKK Metni', """
+Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında, kişisel verileriniz...
+(Buraya uzun KVKK metni gelecek)
+...
+""");
             },
             child: const Text(
               'KVKK Metni',
@@ -132,7 +141,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Aydınlatma Metni Link
           TextButton(
             onPressed: () {
-              // TODO: Show Aydınlatma metni
+              _showLegalDialog(context, 'Aydınlatma Metni', """
+Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
+(Buraya uzun Aydınlatma metni gelecek)
+...
+""");
             },
             child: const Text(
               'Aydınlatma Metni',
@@ -147,25 +160,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfileField(String label, String value) {
+  void _showLegalDialog(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (context) => LegalTextDialog(title: title, content: content),
+    );
+  }
+
+  Widget _buildProfileField(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: AppTheme.stroke, width: AppTheme.strokeThin),
+        color: AppTheme.foreground.withOpacity(0.05),
+        border: Border.all(color: AppTheme.stroke.withOpacity(0.3), width: AppTheme.strokeThin),
         borderRadius: BorderRadius.circular(AppTheme.borderRadius),
       ),
       child: Row(
         children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.foreground.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppTheme.foreground, size: 24),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: AppTheme.foreground,
+                  style: TextStyle(
+                    color: AppTheme.foreground.withOpacity(0.7),
                     fontSize: 12,
-                    fontWeight: FontWeight.w300,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -181,7 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.edit, color: AppTheme.foreground),
+            icon: const Icon(Icons.edit_outlined, color: AppTheme.foreground),
             onPressed: () {
               // TODO: Edit profile field
             },

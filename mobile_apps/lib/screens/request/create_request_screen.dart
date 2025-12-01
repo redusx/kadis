@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:slider_button/slider_button.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/custom_text_field.dart';
 
@@ -116,23 +117,41 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
                     child: const Text('Vazgeç'),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // TODO: Submit request
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Talep oluşturuldu'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
-                    child: const Text('Talep Oluştur'),
+              ],
+            ),
+            const SizedBox(height: 20),
+            
+            // Slider Button for Request Creation
+            Center(
+              child: SliderButton(
+                action: () async {
+                  // TODO: Submit request
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Talep oluşturuldu'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  return true;
+                },
+                label: const Text(
+                  "Kaydırmayarak Talep Oluştur",
+                  style: TextStyle(
+                    color: Color(0xff4a4a4a),
+                    fontWeight: FontWeight.w500,
+                    fontSize: 17,
                   ),
                 ),
-              ],
+                icon: const Text(
+                  "→",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w400,
+                    fontSize: 44,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
