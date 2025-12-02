@@ -1,0 +1,39 @@
+#İlk kez deniyorum hata çıkarsa geri bildirim talep ediyorum.
+name: Backend CI (NestJS)
+
+on:
+  push:
+    branches: [ "main", "develop" ] # Main veya develop branch'ine push gelince çalışır
+    paths:
+      - 'backend/**' # Sadece backend klasöründe değişiklik varsa tetiklenir
+  pull_request:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./backend # Komutları ana dizinde değil, backend klasöründe çalıştırır
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Node.js Kurulumu
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Bağımlılıkları Yükle (Install Dependencies)
+      run: npm ci
+
+    - name: Lint Kontrolü (Kod Düzeni)
+      run: npm run lint
+
+    - name: Build Kontrolü (Derleme Testi)
+      run: npm run build
