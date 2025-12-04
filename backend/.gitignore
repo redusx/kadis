@@ -41,7 +41,9 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
-.firebase-service-account.json
+
+# KRITIK GUVENLIK (Bu dosya asla gonderilmemeli)
+firebase-service-account.json
 
 # temp directory
 .temp
