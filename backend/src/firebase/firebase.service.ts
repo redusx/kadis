@@ -22,6 +22,7 @@ export class FirebaseService implements OnModuleInit {
       return decodedToken;
     } catch (error) {
       throw new Error('Geçersiz Token veya Doğrulama Hatası');
+      console.error('Token doğrulama hatası:', error);
     }
   }
 }
