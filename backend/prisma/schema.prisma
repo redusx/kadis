@@ -7,18 +7,147 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-model User{
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password_hash String
-  role          UserRole
-  is_active     Boolean   @default(true)
-  is_verified   Boolean   @default(false)
-  created_at    DateTime  @default(now())
-}
-
-enum UserRole {
+// Enums - Sabit Değerler
+enum Role {
   DONOR
   HOSPITAL
   ADMIN
+}
+
+enum BloodType {
+  A_RH_POS
+  A_RH_NEG
+  B_RH_POS
+  B_RH_NEG
+  AB_RH_POS
+  AB_RH_NEG
+  O_RH_POS
+  O_RH_NEG
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RequestStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+  EXPIRED
+}
+
+// 1. Ana Kullanıcı Tablosu (Ortak Giriş Bilgileri)
+model User {
+  id            String    @id @default(uuid())
+  phoneNumber   String    @unique // Türkiye'de en geçerli ID telefon numarasıdır
+  password      String    // Hashlenmiş şifre (Argon2 veya Bcrypt)
+  role          Role      @default(DONOR)
+  isVerified    Boolean   @default(false) // SMS/OTP onayı
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // İlişkiler (Profil tablolarına link)
+  donorProfile    DonorProfile?
+  hospitalProfile HospitalProfile?
+  
+  // Bildirimler ve Loglar
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+// 2. Donör Profili (Sadece 'DONOR' rolü için dolu olur)
+model DonorProfile {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  
+  firstName       String
+  lastName        String
+  identityNumber  String?   // T.C. No (Mutlaka Şifreli Saklanmalı - Encrypted)
+  bloodType       BloodType
+  birthDate       DateTime
+  weight          Int?      // Kg cinsinden (50kg altı bağış yapamaz kontrolü için)
+  
+  lastDonationDate DateTime? // Yasal süre kontrolü için (90/120 gün)
+  
+  // Konum Verisi (PostGIS için Raw SQL ile yönetilecek, Prisma'da Unsupported)
+  // Burası coğrafi sorgular için kritik.
+  location        Unsupported("geometry(Point, 4326)")? 
+
+  // Oyunlaştırma
+  totalDonations  Int       @default(0)
+  reputationScore Int       @default(100) // Güvenilirlik puanı
+
+  @@map("donor_profiles")
+  @@index([userId]) // Hızlı arama için indeks
+}
+
+// 3. Hastane Profili (Sadece 'HOSPITAL' rolü için dolu olur)
+model HospitalProfile {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  
+  name          String    // Hastane Adı
+  licenseNumber String    @unique // Sağlık Bakanlığı Ruhsat No
+  address       String
+  city          String
+  
+  // Hastanenin sabit konumu
+  location      Unsupported("geometry(Point, 4326)")
+
+  // Hastanenin oluşturduğu talepler
+  bloodRequests BloodRequest[]
+
+  @@map("hospital_profiles")
+}
+
+// 4. Kan Talepleri
+model BloodRequest {
+  id            String        @id @default(uuid())
+  hospitalId    String
+  hospital      HospitalProfile @relation(fields: [hospitalId], references: [id])
+  
+  bloodType     BloodType
+  unitsNeeded   Int           // Kaç ünite lazım?
+  urgency       Urgency       @default(HIGH)
+  status        RequestStatus @default(PENDING)
+  description   String?       // Opsiyonel not (örn: "Hasta yakınları bekleniyor")
+  
+  location      Unsupported("geometry(Point, 4326)") // Olayın olduğu konum (genelde hastane konumu)
+
+  createdAt     DateTime      @default(now())
+  expiresAt     DateTime      // Talebin geçerlilik süresi
+
+  @@map("blood_requests")
+}
+
+// 5. Bildirimler
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+// 6. Denetim Logları
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String   // Örn: "USER_LOGIN", "BLOOD_REQUEST_CREATED"
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
 }

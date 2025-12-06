@@ -1,14 +1,14 @@
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import {
-ConflictException,
-Injectable,
-UnauthorizedException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { UpdateAuthDto } from './dto/update-auth.dto';
+import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,45 +17,47 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async signIn(email: string,pass: string,): Promise<{ access_token: string }> {
-  const user = await this.userService.findOneLogin(email);
+  async signIn(phoneNumber: string, pass: string): Promise<{ access_token: string }> {
+    const user = await this.userService.findOneByPhoneNumber(phoneNumber);
 
-  if (!user || !(await bcrypt.compare(pass, user.password_hash))) {
-    throw new UnauthorizedException('Invalid credentials');
+    if (!user || !(await bcrypt.compare(pass, user.password))) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    // The isDeleted check was removed as it's not in the current schema.
+
+    const payload = { sub: user.id, phoneNumber: user.phoneNumber };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
   }
-  if (user.isDeleted) {
-    throw new UnauthorizedException('User is deleted');
-  }
-  const payload = { sub: user.id, email: user.email };
-  return {access_token: await this.jwtService.signAsync(payload),} 
-  }
-  
+
   async signUp(createUserDto: CreateUserDto) {
-    const existingUser = await this.userService.findOne(createUserDto.email);
+    const existingUser = await this.userService.findOneByPhoneNumber(createUserDto.phoneNumber);
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException('Phone number already exists');
     }
     try {
-      const hashedPassword = await bcrypt.hash(createUserDto.password_hash, 10);
+      const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
       if (!hashedPassword) {
         throw new Error('Password hashing failed');
       }
-      const newUserDto = {...createUserDto, password_hash: hashedPassword };
+      const newUserDto = { ...createUserDto, password: hashedPassword };
       const resp = await this.userService.create(newUserDto);
       if (resp) {
         return { message: 'User registered successfully' };
-      } 
-      else {
+      } else {
         throw new Error('User creation failed');
       }
     } catch (error) {
-      throw new Error("Password hashing failed : " + error.message);
+      throw new Error('User registration failed: ' + error.message);
     }
   }
 
   async deleteProfile(userId: string) {
     return this.userService.remove(userId);
   }
+
+  // The following are unused placeholder methods and can be ignored for now.
   create(createAuthDto: CreateAuthDto) {
     return 'This action adds a new auth';
   }
