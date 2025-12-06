@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(
                       child: TextButton(
                         onPressed: () {
-                          // TODO: Navigate to forgot password
+                          Navigator.pushNamed(context, AppRoutes.forgotPassword);
                         },
                         child: const Text('Şifremi Unuttum'),
                       ),
