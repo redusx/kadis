@@ -17,19 +17,26 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async signIn(phoneNumber: string, pass: string): Promise<{ access_token: string }> {
-    const user = await this.userService.findOneByPhoneNumber(phoneNumber);
+  async signIn(phoneNumber: string,pass: string,): Promise<{ access_token: string }> {
+  const user = await this.userService.findOneByPhoneNumber(phoneNumber);
 
-    if (!user || !(await bcrypt.compare(pass, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-    // The isDeleted check was removed as it's not in the current schema.
+  const isPasswordValid =
+    user && (await bcrypt.compare(pass, user.password));
 
-    const payload = { sub: user.id, phoneNumber: user.phoneNumber };
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+  if (!isPasswordValid) {
+    throw new UnauthorizedException('Invalid credentials');
   }
+
+  const payload = {
+    sub: user.id,
+    phoneNumber: user.phoneNumber,
+  };
+
+  return {
+    access_token: await this.jwtService.signAsync(payload),
+  };
+}
+
 
   async signUp(createUserDto: CreateUserDto) {
     const existingUser = await this.userService.findOneByPhoneNumber(createUserDto.phoneNumber);

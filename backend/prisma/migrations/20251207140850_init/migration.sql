@@ -1,9 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('DONOR', 'HOSPITAL', 'ADMIN');
 
@@ -15,12 +9,6 @@ CREATE TYPE "Urgency" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
 
 -- CreateEnum
 CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'FULFILLED', 'CANCELLED', 'EXPIRED');
-
--- DropTable
-DROP TABLE "User";
-
--- DropEnum
-DROP TYPE "UserRole";
 
 -- CreateTable
 CREATE TABLE "users" (

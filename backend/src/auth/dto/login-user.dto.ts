@@ -1,10 +1,14 @@
-// email + password DTO
+import { IsString, IsNotEmpty, IsPhoneNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UserLoginDto {
-  @ApiProperty({ example: 'user@example.com' })
-  email: string;
+  @ApiProperty({ example: '5551234567' })
+  @IsPhoneNumber('TR')
+  @IsNotEmpty()
+  phoneNumber: string;
 
   @ApiProperty({ example: 'password123' })
-  password_hash: string;
+  @IsString()
+  @IsNotEmpty()
+  password: string;
 }

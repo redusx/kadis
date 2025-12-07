@@ -7,6 +7,7 @@ import {
   Request,
   UseGuards,
   Delete,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
@@ -21,7 +22,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('login')
   signIn(@Body() signInDto: UserLoginDto) {
-    return this.authService.signIn(signInDto.email, signInDto.password_hash);
+    return this.authService.signIn(signInDto.phoneNumber, signInDto.password);
   }
   
   @Post('signup')
