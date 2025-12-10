@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/theme/app_theme.dart';
 import '../models/hospital_model.dart';
 
@@ -16,6 +17,7 @@ class HospitalBottomSheet extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.background,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -23,10 +25,24 @@ class HospitalBottomSheet extends StatelessWidget {
     );
   }
 
+  Future<void> _launchUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        debugPrint('Could not launch $url');
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
+      padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: AppTheme.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -36,113 +52,166 @@ class HospitalBottomSheet extends StatelessWidget {
           right: BorderSide(color: AppTheme.stroke, width: 1),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle bar
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(
-                color: AppTheme.foreground.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.foreground.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
 
-          // Hospital icon and name
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.local_hospital,
-                  color: Colors.red,
-                  size: 28,
+            // Hospital Image
+            if (hospital.hasImage) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  hospital.imageUrl!,
+                  width: double.infinity,
+                  height: 180,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: double.infinity,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade800,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.local_hospital,
+                        color: Colors.red,
+                        size: 60,
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: double.infinity,
+                      height: 180,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade900,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.red,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      hospital.name,
-                      style: const TextStyle(
-                        color: AppTheme.foreground,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (hospital.hasEmergency) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.emergency,
-                            color: Colors.red.shade400,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Acil Servis Mevcut',
-                            style: TextStyle(
-                              color: Colors.red.shade400,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+              const SizedBox(height: 16),
+            ],
+
+            // Hospital Name
+            Text(
+              hospital.name,
+              style: const TextStyle(
+                color: AppTheme.foreground,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            
+            // Category
+            if (hospital.category != null) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  hospital.category!,
+                  style: TextStyle(
+                    color: Colors.red.shade400,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-          // Details
-          if (hospital.city != null || hospital.district != null)
-            _buildInfoRow(
-              Icons.location_on_outlined,
-              [hospital.city, hospital.district].whereType<String>().join(', '),
+            // Address
+            if (hospital.address != null)
+              _buildInfoRow(
+                Icons.location_on_outlined,
+                hospital.address!,
+              ),
+            
+            // Phone
+            if (hospital.phone != null)
+              _buildInfoRow(
+                Icons.phone_outlined,
+                hospital.phone!,
+                onTap: () => _launchUrl('tel:${hospital.phone}'),
+              ),
+            
+            // Website
+            if (hospital.website != null)
+              _buildInfoRow(
+                Icons.language_outlined,
+                hospital.website!,
+                onTap: () => _launchUrl(hospital.website!),
+              ),
+
+            const SizedBox(height: 20),
+
+            // Google Maps Button
+            if (hospital.hasGoogleMapsUrl)
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: () => _launchUrl(hospital.url!),
+                  icon: const Icon(Icons.directions),
+                  label: const Text('Google Maps\'te Aç'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+
+            const SizedBox(height: 12),
+
+            // Close button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Kapat'),
+              ),
             ),
-          
-          if (hospital.phone != null)
-            _buildInfoRow(Icons.phone_outlined, hospital.phone!),
-          
-          if (hospital.website != null)
-            _buildInfoRow(Icons.language_outlined, hospital.website!),
-          
-          if (hospital.operator != null)
-            _buildInfoRow(Icons.business_outlined, hospital.operator!),
-
-          const SizedBox(height: 20),
-
-          // Close button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Kapat'),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
-    return Padding(
+  Widget _buildInfoRow(IconData icon, String text, {VoidCallback? onTap}) {
+    Widget content = Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             icon,
@@ -154,13 +223,24 @@ class HospitalBottomSheet extends StatelessWidget {
             child: Text(
               text,
               style: TextStyle(
-                color: AppTheme.foreground.withOpacity(0.9),
+                color: onTap != null 
+                    ? Colors.blue.shade300 
+                    : AppTheme.foreground.withOpacity(0.9),
                 fontSize: 14,
+                decoration: onTap != null ? TextDecoration.underline : null,
               ),
             ),
           ),
         ],
       ),
     );
+
+    if (onTap != null) {
+      return GestureDetector(
+        onTap: onTap,
+        child: content,
+      );
+    }
+    return content;
   }
 }

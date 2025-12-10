@@ -38,6 +38,7 @@ dependencies:
   latlong2: ^0.9.1
   slider_button: ^2.1.0
   flutter_map_marker_cluster: ^1.4.0
+  url_launcher: ^6.2.1
 
 dev_dependencies:
   flutter_test:

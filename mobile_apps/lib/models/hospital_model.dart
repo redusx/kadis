@@ -3,28 +3,30 @@ import 'package:latlong2/latlong.dart';
 /// Hospital model class for GeoJSON parsing
 /// Handles coordinate swap: GeoJSON [lon, lat] -> LatLng(lat, lon)
 class Hospital {
-  final String id;
+  final String? id;
   final String name;
   final double latitude;
   final double longitude;
-  final String? city;
-  final String? district;
+  final String? category;
+  final String? address;
   final String? phone;
   final String? website;
-  final bool hasEmergency;
-  final String? operator;
+  final String? url; // Google Maps URL
+  final String? imageUrl;
+  final String? placeId;
 
   Hospital({
-    required this.id,
+    this.id,
     required this.name,
     required this.latitude,
     required this.longitude,
-    this.city,
-    this.district,
+    this.category,
+    this.address,
     this.phone,
     this.website,
-    this.hasEmergency = false,
-    this.operator,
+    this.url,
+    this.imageUrl,
+    this.placeId,
   });
 
   /// Parse from GeoJSON feature
@@ -39,28 +41,39 @@ class Hospital {
     final double longitude = (coordinates[0] as num).toDouble();
     final double latitude = (coordinates[1] as num).toDouble();
     
+    // Handle phone - check for "Telefon Yok" or empty
+    String? phone = properties['phone']?.toString();
+    if (phone == 'Telefon Yok' || phone?.isEmpty == true) {
+      phone = null;
+    }
+    
+    // Handle website - check for empty
+    String? website = properties['website']?.toString();
+    if (website?.isEmpty == true) {
+      website = null;
+    }
+    
     return Hospital(
-      id: feature['id']?.toString() ?? properties['@id']?.toString() ?? '',
+      id: feature['id']?.toString() ?? properties['placeId']?.toString(),
       name: properties['name']?.toString() ?? 'Bilinmeyen Hastane',
       latitude: latitude,
       longitude: longitude,
-      city: properties['addr:city']?.toString(),
-      district: properties['addr:district']?.toString(),
-      phone: properties['phone']?.toString() ?? properties['contact:phone']?.toString(),
-      website: properties['website']?.toString(),
-      hasEmergency: properties['emergency'] == 'yes',
-      operator: properties['operator']?.toString(),
+      category: properties['category']?.toString(),
+      address: properties['address']?.toString(),
+      phone: phone,
+      website: website,
+      url: properties['url']?.toString(),
+      imageUrl: properties['imageUrl']?.toString(),
+      placeId: properties['placeId']?.toString(),
     );
   }
 
   /// Get LatLng for map marker
   LatLng get latLng => LatLng(latitude, longitude);
 
-  /// Display name with city
-  String get displayName {
-    if (city != null) {
-      return '$name - $city';
-    }
-    return name;
-  }
+  /// Check if has valid image
+  bool get hasImage => imageUrl != null && imageUrl!.isNotEmpty;
+  
+  /// Check if has Google Maps URL
+  bool get hasGoogleMapsUrl => url != null && url!.isNotEmpty;
 }
