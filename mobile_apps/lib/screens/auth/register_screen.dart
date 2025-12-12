@@ -38,7 +38,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   List<CityModel> _cities = [];
   CityModel? _selectedCity;
   TownModel? _selectedTown;
-  DistrictModel? _selectedDistrict;
   QuarterModel? _selectedQuarter;
 
   // Map location
@@ -135,7 +134,6 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
     setState(() {
       _selectedCity = city;
       _selectedTown = null;
-      _selectedDistrict = null;
       _selectedQuarter = null;
     });
   }
@@ -143,14 +141,6 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
   void _onTownChanged(TownModel? town) {
     setState(() {
       _selectedTown = town;
-      _selectedDistrict = null;
-      _selectedQuarter = null;
-    });
-  }
-
-  void _onDistrictChanged(DistrictModel? district) {
-    setState(() {
-      _selectedDistrict = district;
       _selectedQuarter = null;
     });
   }
@@ -159,6 +149,16 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
     setState(() {
       _selectedQuarter = quarter;
     });
+
+    // Auto-focus map to quarter coordinates when available
+    if (quarter?.latitude != null && quarter?.longitude != null) {
+      final newCenter = LatLng(quarter!.latitude!, quarter.longitude!);
+      _mapController.move(newCenter, 16);
+      setState(() {
+        _selectedLat = quarter.latitude!;
+        _selectedLong = quarter.longitude!;
+      });
+    }
   }
 
   InputDecoration _getDropdownDecoration(String label) {
@@ -304,25 +304,6 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
               ),
               const SizedBox(height: 10),
 
-              // District Dropdown (Semt)
-              DropdownButtonFormField<DistrictModel>(
-                value: _selectedDistrict,
-                decoration: _getDropdownDecoration('Semt'),
-                dropdownColor: AppTheme.background,
-                style: const TextStyle(color: AppTheme.foreground),
-                isExpanded: true,
-                menuMaxHeight: 300,
-                items: _selectedTown?.districts.map((district) {
-                      return DropdownMenuItem(
-                        value: district,
-                        child: Text(district.name),
-                      );
-                    }).toList() ??
-                    [],
-                onChanged: _selectedTown != null ? _onDistrictChanged : null,
-              ),
-              const SizedBox(height: 10),
-
               // Quarter Dropdown (Mahalle)
               DropdownButtonFormField<QuarterModel>(
                 value: _selectedQuarter,
@@ -331,14 +312,14 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
                 style: const TextStyle(color: AppTheme.foreground),
                 isExpanded: true,
                 menuMaxHeight: 300,
-                items: _selectedDistrict?.quarters.map((quarter) {
+                items: _selectedTown?.quarters.map((quarter) {
                       return DropdownMenuItem(
                         value: quarter,
                         child: Text(quarter.name),
                       );
                     }).toList() ??
                     [],
-                onChanged: _selectedDistrict != null ? _onQuarterChanged : null,
+                onChanged: _selectedTown != null ? _onQuarterChanged : null,
               ),
               const SizedBox(height: 10),
 
