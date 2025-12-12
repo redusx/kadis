@@ -1,0 +1,51 @@
+Running Gradle task 'assembleRelease'...                        
+Font asset "MaterialIcons-Regular.otf" was tree-shaken, reducing it from 1645184 to 3264 bytes (99.8% reduction). Tree-shaking can be disabled by providing the --no-tree-shake-icons flag when building your app.
+warning: [options] source value 8 is obsolete and will be removed in a future release
+warning: [options] target value 8 is obsolete and will be removed in a future release
+warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+/Users/donme/.pub-cache/hosted/pub.dev/vibration-1.9.0/android/src/main/java/com/benjaminabel/vibration/VibrationPlugin.java:20: error: cannot find symbol
+    public static void registerWith(io.flutter.plugin.common.PluginRegistry.Registrar registrar) {
+                                                                           ^
+  symbol:   class Registrar
+  location: interface PluginRegistry
+Note: /Users/donme/.pub-cache/hosted/pub.dev/vibration-1.9.0/android/src/main/java/com/benjaminabel/vibration/VibrationPlugin.java uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+1 error
+3 warnings
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':vibration:compileReleaseJavaWithJavac'.
+> Compilation failed; see the compiler output below.
+  Note: /Users/donme/.pub-cache/hosted/pub.dev/vibration-1.9.0/android/src/main/java/com/benjaminabel/vibration/VibrationPlugin.java uses or overrides a deprecated API.
+  warning: [options] target value 8 is obsolete and will be removed in a future release
+  Note: Recompile with -Xlint:deprecation for details.
+  warning: [options] source value 8 is obsolete and will be removed in a future release
+  /Users/donme/.pub-cache/hosted/pub.dev/vibration-1.9.0/android/src/main/java/com/benjaminabel/vibration/VibrationPlugin.java:20: error: cannot find symbol
+      public static void registerWith(io.flutter.plugin.common.PluginRegistry.Registrar registrar) {
+                                                                             ^
+    symbol:   class Registrar
+    location: interface PluginRegistry
+  warning: [options] To suppress warnings about obsolete options, use -Xlint:-options.
+  1 error
+  3 warnings
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights.
+
+BUILD FAILED in 4s
+Running Gradle task 'assembleRelease'...                            5,1s
+
+┌─ Flutter Fix ───────────────────────────────────────────────────────────────────────────────────┐
+│ [!] Consult the error logs above to identify any broken plugins, specifically those containing  │
+│ "error: cannot find symbol..."                                                                  │
+│ This issue is likely caused by v1 embedding removal and the plugin's continued usage of removed │
+│ references to the v1 embedding.                                                                 │
+│ To fix this error, please upgrade your current package's dependencies to latest versions by     │
+│ running `flutter pub upgrade`.                                                                  │
+│ If that does not work, please file an issue for the problematic plugin(s) here:                 │
+│ https://github.com/flutter/flutter/issues                                                       │
+└─────────────────────────────────────────────────────────────────────────────────────────────────┘
+Gradle task assembleRelease failed with exit code 1

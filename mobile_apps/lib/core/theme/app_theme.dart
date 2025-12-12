@@ -110,7 +110,7 @@ class AppTheme {
       ),
       
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: background,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
