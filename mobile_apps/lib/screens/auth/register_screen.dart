@@ -31,17 +31,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _kvkkAccepted = false;
   bool _aydinlatmaAccepted = false;
 
-  // Blood types
   final List<String> _bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
-  // Address data
   List<CityModel> _cities = [];
   CityModel? _selectedCity;
   TownModel? _selectedTown;
   QuarterModel? _selectedQuarter;
 
-  // Map location
-  double _selectedLat = 41.0082; // Default: Istanbul
+  
+  double _selectedLat = 41.0082; 
   double _selectedLong = 28.9784;
   bool _isLoadingLocation = true;
   bool _isLoadingCities = true;

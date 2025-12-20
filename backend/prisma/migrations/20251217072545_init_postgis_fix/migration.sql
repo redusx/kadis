@@ -1,3 +1,8 @@
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+
+
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('DONOR', 'HOSPITAL', 'ADMIN');
 
@@ -5,10 +10,16 @@ CREATE TYPE "Role" AS ENUM ('DONOR', 'HOSPITAL', 'ADMIN');
 CREATE TYPE "BloodType" AS ENUM ('A_RH_POS', 'A_RH_NEG', 'B_RH_POS', 'B_RH_NEG', 'AB_RH_POS', 'AB_RH_NEG', 'O_RH_POS', 'O_RH_NEG');
 
 -- CreateEnum
+CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
+
+-- CreateEnum
 CREATE TYPE "Urgency" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL');
 
 -- CreateEnum
-CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'FULFILLED', 'CANCELLED', 'EXPIRED');
+CREATE TYPE "RequestStatus" AS ENUM ('PENDING', 'ACTIVE', 'FULFILLED', 'CANCELLED', 'EXPIRED');
+
+-- CreateEnum
+CREATE TYPE "TransactionStatus" AS ENUM ('ACCEPTED', 'EN_ROUTE', 'ARRIVED', 'COMPLETED', 'CANCELLED');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -17,6 +28,7 @@ CREATE TABLE "users" (
     "password" TEXT NOT NULL,
     "role" "Role" NOT NULL DEFAULT 'DONOR',
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
+    "kvkkConsent" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -31,12 +43,13 @@ CREATE TABLE "donor_profiles" (
     "lastName" TEXT NOT NULL,
     "identityNumber" TEXT,
     "bloodType" "BloodType" NOT NULL,
+    "gender" "Gender" NOT NULL,
     "birthDate" TIMESTAMP(3) NOT NULL,
     "weight" INTEGER,
     "lastDonationDate" TIMESTAMP(3),
-    "location" geometry(Point, 4326),
+    "location" geography(Point, 4326),
     "totalDonations" INTEGER NOT NULL DEFAULT 0,
-    "reputationScore" INTEGER NOT NULL DEFAULT 100,
+    "trustScore" DOUBLE PRECISION NOT NULL DEFAULT 10.0,
 
     CONSTRAINT "donor_profiles_pkey" PRIMARY KEY ("id")
 );
@@ -49,7 +62,7 @@ CREATE TABLE "hospital_profiles" (
     "licenseNumber" TEXT NOT NULL,
     "address" TEXT NOT NULL,
     "city" TEXT NOT NULL,
-    "location" geometry(Point, 4326) NOT NULL,
+    "location" geography(Point, 4326) NOT NULL,
 
     CONSTRAINT "hospital_profiles_pkey" PRIMARY KEY ("id")
 );
@@ -57,13 +70,14 @@ CREATE TABLE "hospital_profiles" (
 -- CreateTable
 CREATE TABLE "blood_requests" (
     "id" TEXT NOT NULL,
-    "hospitalId" TEXT NOT NULL,
+    "requesterId" TEXT NOT NULL,
+    "hospitalName" TEXT NOT NULL,
     "bloodType" "BloodType" NOT NULL,
     "unitsNeeded" INTEGER NOT NULL,
     "urgency" "Urgency" NOT NULL DEFAULT 'HIGH',
     "status" "RequestStatus" NOT NULL DEFAULT 'PENDING',
     "description" TEXT,
-    "location" geometry(Point, 4326) NOT NULL,
+    "location" geography(Point, 4326) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "expiresAt" TIMESTAMP(3) NOT NULL,
 
@@ -71,26 +85,16 @@ CREATE TABLE "blood_requests" (
 );
 
 -- CreateTable
-CREATE TABLE "notifications" (
+CREATE TABLE "donation_transactions" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "title" TEXT NOT NULL,
-    "message" TEXT NOT NULL,
-    "isRead" BOOLEAN NOT NULL DEFAULT false,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "requestId" TEXT NOT NULL,
+    "donorId" TEXT NOT NULL,
+    "status" "TransactionStatus" NOT NULL DEFAULT 'ACCEPTED',
+    "acceptedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "arrivedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
 
-    CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "audit_logs" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "action" TEXT NOT NULL,
-    "details" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "donation_transactions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -108,17 +112,20 @@ CREATE UNIQUE INDEX "hospital_profiles_userId_key" ON "hospital_profiles"("userI
 -- CreateIndex
 CREATE UNIQUE INDEX "hospital_profiles_licenseNumber_key" ON "hospital_profiles"("licenseNumber");
 
--- AddForeignKey
-ALTER TABLE "donor_profiles" ADD CONSTRAINT "donor_profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- CreateIndex
+CREATE UNIQUE INDEX "donation_transactions_requestId_donorId_key" ON "donation_transactions"("requestId", "donorId");
 
 -- AddForeignKey
-ALTER TABLE "hospital_profiles" ADD CONSTRAINT "hospital_profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "donor_profiles" ADD CONSTRAINT "donor_profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "blood_requests" ADD CONSTRAINT "blood_requests_hospitalId_fkey" FOREIGN KEY ("hospitalId") REFERENCES "hospital_profiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "hospital_profiles" ADD CONSTRAINT "hospital_profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "blood_requests" ADD CONSTRAINT "blood_requests_requesterId_fkey" FOREIGN KEY ("requesterId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "audit_logs" ADD CONSTRAINT "audit_logs_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "donation_transactions" ADD CONSTRAINT "donation_transactions_requestId_fkey" FOREIGN KEY ("requestId") REFERENCES "blood_requests"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "donation_transactions" ADD CONSTRAINT "donation_transactions_donorId_fkey" FOREIGN KEY ("donorId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

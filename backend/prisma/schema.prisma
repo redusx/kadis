@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,7 +9,6 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-// Enums - Sabit Değerler
 enum Role {
   DONOR
   HOSPITAL
@@ -25,6 +26,12 @@ enum BloodType {
   O_RH_NEG
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum Urgency {
   LOW
   MEDIUM
@@ -34,120 +41,119 @@ enum Urgency {
 
 enum RequestStatus {
   PENDING
+  ACTIVE
   FULFILLED
   CANCELLED
   EXPIRED
 }
 
-// 1. Ana Kullanıcı Tablosu (Ortak Giriş Bilgileri)
-model User {
-  id            String    @id @default(uuid())
-  phoneNumber   String    @unique // Türkiye'de en geçerli ID telefon numarasıdır
-  password      String    // Hashlenmiş şifre (Argon2 veya Bcrypt)
-  role          Role      @default(DONOR)
-  isVerified    Boolean   @default(false) // SMS/OTP onayı
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+enum TransactionStatus {
+  ACCEPTED
+  EN_ROUTE
+  ARRIVED
+  COMPLETED
+  CANCELLED
+}
 
-  // İlişkiler (Profil tablolarına link)
+
+model User {
+  id           String   @id @default(uuid())
+  phoneNumber  String   @unique
+  password     String
+  role         Role     @default(DONOR)
+  isVerified   Boolean  @default(false) // SMS Onayı
+  
+  // KVKK ve Yasal Zorunluluklar
+  kvkkConsent  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // İlişkiler
   donorProfile    DonorProfile?
   hospitalProfile HospitalProfile?
-  
-  // Bildirimler ve Loglar
-  notifications   Notification[]
-  auditLogs       AuditLog[]
+
+  createdRequests BloodRequest[]        @relation("Requester")
+  donations       DonationTransaction[] @relation("DonorTransaction")
 
   @@map("users")
 }
 
-// 2. Donör Profili (Sadece 'DONOR' rolü için dolu olur)
 model DonorProfile {
-  id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id])
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  firstName       String
-  lastName        String
-  identityNumber  String?   // T.C. No (Mutlaka Şifreli Saklanmalı - Encrypted)
-  bloodType       BloodType
-  birthDate       DateTime
-  weight          Int?      // Kg cinsinden (50kg altı bağış yapamaz kontrolü için)
+  firstName      String
+  lastName       String
+  identityNumber String?   
   
-  lastDonationDate DateTime? // Yasal süre kontrolü için (90/120 gün)
+  bloodType      BloodType
+  gender         Gender    // Bağış aralığı hesaplaması için (Erkek 3 ay, Kadın 4 ay)
+  birthDate      DateTime
+  weight         Int?      // 50kg altı kontrolü için
   
-  // Konum Verisi (PostGIS için Raw SQL ile yönetilecek, Prisma'da Unsupported)
-  // Burası coğrafi sorgular için kritik.
-  location        Unsupported("geometry(Point, 4326)")? 
+  lastDonationDate DateTime? 
+  
+  location Unsupported("geography(Point, 4326)")?
 
-  // Oyunlaştırma
-  totalDonations  Int       @default(0)
-  reputationScore Int       @default(100) // Güvenilirlik puanı
-
+  totalDonations  Int     @default(0)
+  trustScore      Float   @default(10.0) 
+  @@index([userId])
   @@map("donor_profiles")
-  @@index([userId]) // Hızlı arama için indeks
 }
 
-// 3. Hastane Profili (Sadece 'HOSPITAL' rolü için dolu olur)
 model HospitalProfile {
-  id            String    @id @default(uuid())
-  userId        String    @unique
-  user          User      @relation(fields: [userId], references: [id])
-  
-  name          String    // Hastane Adı
-  licenseNumber String    @unique // Sağlık Bakanlığı Ruhsat No
+  id            String                        @id @default(uuid())
+  userId        String                        @unique
+  user          User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  licenseNumber String                        @unique
   address       String
   city          String
-  
-  // Hastanenin sabit konumu
-  location      Unsupported("geometry(Point, 4326)")
 
-  // Hastanenin oluşturduğu talepler
-  bloodRequests BloodRequest[]
+  location Unsupported("geography(Point, 4326)")
 
   @@map("hospital_profiles")
 }
 
-// 4. Kan Talepleri
 model BloodRequest {
-  id            String        @id @default(uuid())
-  hospitalId    String
-  hospital      HospitalProfile @relation(fields: [hospitalId], references: [id])
+  id          String   @id @default(uuid())
   
-  bloodType     BloodType
-  unitsNeeded   Int           // Kaç ünite lazım?
-  urgency       Urgency       @default(HIGH)
-  status        RequestStatus @default(PENDING)
-  description   String?       // Opsiyonel not (örn: "Hasta yakınları bekleniyor")
+  requesterId String
+  requester   User     @relation("Requester", fields: [requesterId], references: [id])
+
+  hospitalName String
+  bloodType    BloodType
+  unitsNeeded  Int
+  urgency      Urgency       @default(HIGH)
+  status       RequestStatus @default(PENDING)
+  description  String?
   
-  location      Unsupported("geometry(Point, 4326)") // Olayın olduğu konum (genelde hastane konumu)
+  location Unsupported("geography(Point, 4326)")
+  
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
 
-  createdAt     DateTime      @default(now())
-  expiresAt     DateTime      // Talebin geçerlilik süresi
+  transactions DonationTransaction[]
 
-  @@map("blood_requests")
-}
+ @@map("blood_requests")
+ }
 
-// 5. Bildirimler
-model Notification {
+model DonationTransaction {
   id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  
+  requestId String
+  request   BloodRequest @relation(fields: [requestId], references: [id])
+  
+  donorId   String
+  donor     User     @relation("DonorTransaction", fields: [donorId], references: [id])
+  
+  status    TransactionStatus @default(ACCEPTED)
+  
+  acceptedAt  DateTime @default(now())
+  arrivedAt   DateTime?
+  completedAt DateTime?
 
-  @@map("notifications")
-}
-
-// 6. Denetim Logları
-model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  action    String   // Örn: "USER_LOGIN", "BLOOD_REQUEST_CREATED"
-  details   String?
-  createdAt DateTime @default(now())
-
-  @@map("audit_logs")
+  @@unique([requestId, donorId])
+  @@map("donation_transactions")
 }
