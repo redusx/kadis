@@ -88,9 +88,9 @@ model DonorProfile {
   identityNumber String?   
   
   bloodType      BloodType
-  gender         Gender    // Bağış aralığı hesaplaması için (Erkek 3 ay, Kadın 4 ay)
+  gender         Gender    
   birthDate      DateTime
-  weight         Int?      // 50kg altı kontrolü için
+  weight         Int?      
   
   lastDonationDate DateTime? 
   
@@ -111,6 +111,8 @@ model HospitalProfile {
   address       String
   city          String
 
+  hasBloodBank  Boolean  @default(false)
+
   location Unsupported("geography(Point, 4326)")
 
   @@map("hospital_profiles")
@@ -129,7 +131,7 @@ model BloodRequest {
   status       RequestStatus @default(PENDING)
   description  String?
   
-  location Unsupported("geography(Point, 4326)")
+  location Unsupported("geography(Point, 4326)")?
   
   createdAt    DateTime @default(now())
   expiresAt    DateTime

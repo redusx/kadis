@@ -46,20 +46,18 @@ async function main() {
         userId: user.id,
         firstName: `YakinDonör`,
         lastName: `${i}`,
-        identityNumber: `1111111111${i}`, // Yeni TCKN alanı
-        bloodType: 'A_RH_POS', // Test için hepsi A RH+
-        gender: Gender.MALE, // Yeni Gender alanı
+        identityNumber: `1111111111${i}`,
+        bloodType: 'A_RH_POS',
+        gender: Gender.MALE,
         birthDate: new Date('1990-01-01'),
         lastDonationDate: new Date('2023-01-01'), // Bağışa uygun
-        trustScore: 10.0, // Yeni Güven Skoru
+        trustScore: 10.0,
       },
     });
 
-    // KONUM GÜNCELLEME (Geography Dönüşümlü)
     const lat = CENTER_LAT + latOffset;
     const lon = CENTER_LON + lonOffset;
 
-    // DİKKAT: ::geography eklentisi burada!
     await prisma.$executeRawUnsafe(`
       UPDATE "donor_profiles"
       SET location = ST_SetSRID(ST_MakePoint(${lon}, ${lat}), 4326)::geography
@@ -69,9 +67,7 @@ async function main() {
     console.log(`✅ Yakın Donör Eklendi: ${phone}`);
   }
 
-  // --- SENARYO 2: UZAKTAKİLER (Eşleşmemesi Gerekenler - 5 Kişi) ---
   for (let i = 1; i <= 5; i++) {
-    // 0.2 derece yaklaşık 20 km eder (Gölbaşı tarafı)
     const latOffset = 0.15 + Math.random() * 0.05;
 
     const phone = `555200000${i}`;
