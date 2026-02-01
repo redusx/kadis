@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/routes/app_routes.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,14 +12,63 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _login() async {
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+
+    // Validation
+    if (phone.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = 'Telefon numarası ve şifre gereklidir';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _authService.login(
+        phoneNumber: phone,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      if (response.success) {
+        Navigator.pushReplacementNamed(context, AppRoutes.home);
+      } else {
+        setState(() {
+          _errorMessage = response.message ?? 'Giriş başarısız';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Bağlantı hatası: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -62,11 +112,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
                 
-                // Email/Phone Field
+                // Error Message
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                
+                // Phone Field
                 CustomTextField(
-                  label: 'E-posta veya Telefon',
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
+                  label: 'Telefon Numarası',
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 16),
                 
@@ -82,15 +150,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacementNamed(context, AppRoutes.home);
-                    },
-                    child: const Text('Giriş Yap'),
+                    onPressed: _isLoading ? null : _login,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Giriş Yap'),
                   ),
                 ),
                 const SizedBox(height: 16),
                 
-                // Forgot Password
+                // Forgot Password & Register
                 Row(
                   children: [
                     Expanded(

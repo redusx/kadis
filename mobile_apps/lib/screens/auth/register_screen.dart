@@ -8,6 +8,8 @@ import '../../widgets/custom_text_field.dart';
 import '../../widgets/dialogs/legal_text_dialog.dart';
 import '../../models/address_models.dart';
 import '../../services/address_service.dart';
+import '../../services/auth_service.dart';
+
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -25,11 +27,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _streetController = TextEditingController();
   final _passwordController = TextEditingController();
   final MapController _mapController = MapController();
+  final AuthService _authService = AuthService();
 
   // Form fields
   String? _selectedBloodType;
   bool _kvkkAccepted = false;
   bool _aydinlatmaAccepted = false;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   final List<String> _bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
@@ -479,23 +484,100 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              // Error Message
+              if (_errorMessage != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
 
               // Register Button
               SizedBox(
                 height: 52,
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: (_kvkkAccepted && _aydinlatmaAccepted)
-                      ? () {
-                          // Here you would collect all form data including:
-                          // - _selectedCity, _selectedTown, _selectedDistrict, _selectedQuarter
-                          // - _selectedLat, _selectedLong
-                          // And send to backend
-                          Navigator.pushReplacementNamed(context, AppRoutes.home);
+                  onPressed: (_kvkkAccepted && _aydinlatmaAccepted && !_isLoading)
+                      ? () async {
+                          final phone = _phoneController.text.trim();
+                          final password = _passwordController.text;
+                          
+                          // Validation
+                          if (phone.isEmpty || password.isEmpty) {
+                            setState(() {
+                              _errorMessage = 'Telefon numarası ve şifre gereklidir';
+                            });
+                            return;
+                          }
+                          
+                          if (password.length < 8) {
+                            setState(() {
+                              _errorMessage = 'Şifre en az 8 karakter olmalıdır';
+                            });
+                            return;
+                          }
+                          
+                          setState(() {
+                            _isLoading = true;
+                            _errorMessage = null;
+                          });
+                          
+                          try {
+                            final response = await _authService.signup(
+                              phoneNumber: phone,
+                              password: password,
+                              role: 'DONOR',
+                            );
+                            
+                            if (!mounted) return;
+                            
+                            if (response.success) {
+                              // Show success message and navigate to login
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Kayıt başarılı! Giriş yapabilirsiniz.'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              Navigator.pushReplacementNamed(context, AppRoutes.login);
+                            } else {
+                              setState(() {
+                                _errorMessage = response.message ?? 'Kayıt başarısız';
+                              });
+                            }
+                          } catch (e) {
+                            setState(() {
+                              _errorMessage = 'Bağlantı hatası: $e';
+                            });
+                          } finally {
+                            if (mounted) {
+                              setState(() {
+                                _isLoading = false;
+                              });
+                            }
+                          }
                         }
                       : null,
-                  child: const Text('KAYIT OL'),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('KAYIT OL'),
                 ),
               ),
             ],
