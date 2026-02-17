@@ -4,7 +4,7 @@
 class ApiConfig {
   // Fiziksel cihaz için local IP adresi kullanılıyor
   // Emulator için: http://10.0.2.2:3000 (Android) veya http://localhost:3000 (iOS)
-  static const String baseUrl = 'http://192.168.1.104:3000';
+  static const String baseUrl = 'http://192.168.1.105:3000';
   
   static const Duration timeout = Duration(seconds: 30);
   
