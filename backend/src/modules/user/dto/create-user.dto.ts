@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role, BloodType, Gender } from '@prisma/client';
-import { IsPhoneNumber, IsString, MinLength, IsOptional, IsEnum, IsDateString, IsInt, Min } from 'class-validator';
+import { IsPhoneNumber, IsString, MinLength, IsOptional, IsEnum, IsDateString, IsInt, Min, IsEmail, IsNumber } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({ example: '5551234567' })
@@ -16,6 +16,11 @@ export class CreateUserDto {
   @IsOptional()
   @IsEnum(Role)
   role?: Role;
+
+  @ApiPropertyOptional({ example: 'ahmet@example.com' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
 
   // Donor Profile Fields (opsiyonel — kayıt sırasında gönderilebilir)
   @ApiPropertyOptional({ example: 'Ahmet' })
@@ -48,4 +53,35 @@ export class CreateUserDto {
   @IsInt()
   @Min(30)
   weight?: number;
+
+  // Adres alanları
+  @ApiPropertyOptional({ example: 'İstanbul' })
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'Kadıköy' })
+  @IsOptional()
+  @IsString()
+  town?: string;
+
+  @ApiPropertyOptional({ example: 'Caferağa' })
+  @IsOptional()
+  @IsString()
+  quarter?: string;
+
+  @ApiPropertyOptional({ example: 'Moda Caddesi' })
+  @IsOptional()
+  @IsString()
+  street?: string;
+
+  @ApiPropertyOptional({ example: 40.9884 })
+  @IsOptional()
+  @IsNumber()
+  latitude?: number;
+
+  @ApiPropertyOptional({ example: 29.0288 })
+  @IsOptional()
+  @IsNumber()
+  longitude?: number;
 }

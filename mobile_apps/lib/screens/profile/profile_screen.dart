@@ -175,6 +175,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.phone_outlined,
           ),
           _buildProfileField(
+            'E-posta',
+            profile.email ?? 'Belirtilmemiş',
+            Icons.email_outlined,
+          ),
+          _buildProfileField(
             'Cinsiyet',
             donor != null ? donor.genderDisplay : 'Belirtilmemiş',
             Icons.wc_outlined,
@@ -191,6 +196,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Icons.monitor_weight_outlined,
             ),
           _buildProfileField(
+            'Adres',
+            donor != null ? donor.addressDisplay : 'Belirtilmemiş',
+            Icons.location_on_outlined,
+          ),
+          _buildProfileField(
             'Toplam Bağış',
             donor != null ? '${donor.totalDonations} bağış' : '0 bağış',
             Icons.volunteer_activism_outlined,
@@ -201,16 +211,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _formatDate(donor!.lastDonationDate!),
               Icons.calendar_today_outlined,
             ),
-          _buildProfileField(
-            'Rol',
-            _getRoleDisplay(profile.role),
-            Icons.badge_outlined,
-          ),
-          _buildProfileField(
-            'Üyelik Tarihi',
-            _formatDate(profile.createdAt),
-            Icons.access_time_outlined,
-          ),
 
           // DonorProfile yoksa uyarı
           if (donor == null) ...[

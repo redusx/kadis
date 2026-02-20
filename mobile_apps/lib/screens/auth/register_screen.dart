@@ -38,6 +38,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final List<String> _bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-'];
 
+  // Cinsiyet seçimi
+  String? _selectedGender;
+  final List<Map<String, String>> _genders = [
+    {'value': 'MALE', 'label': 'Erkek'},
+    {'value': 'FEMALE', 'label': 'Kadın'},
+    {'value': 'OTHER', 'label': 'Diğer'},
+  ];
+
   List<CityModel> _cities = [];
   CityModel? _selectedCity;
   TownModel? _selectedTown;
@@ -231,6 +239,19 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
                   return DropdownMenuItem(value: type, child: Text(type));
                 }).toList(),
                 onChanged: (value) => setState(() => _selectedBloodType = value),
+              ),
+              const SizedBox(height: 10),
+
+              // Gender Dropdown (Cinsiyet)
+              DropdownButtonFormField<String>(
+                value: _selectedGender,
+                decoration: _getDropdownDecoration('Cinsiyet'),
+                dropdownColor: AppTheme.background,
+                style: const TextStyle(color: AppTheme.foreground),
+                items: _genders.map((g) {
+                  return DropdownMenuItem(value: g['value'], child: Text(g['label']!));
+                }).toList(),
+                onChanged: (value) => setState(() => _selectedGender = value),
               ),
               const SizedBox(height: 10),
 
@@ -565,8 +586,19 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
                                   ? _lastNameController.text.trim()
                                   : null,
                               bloodType: bloodTypeEnum,
-                              gender: 'MALE', // TODO: Kayıt formuna cinsiyet seçimi eklenebilir
+                              gender: _selectedGender,
                               birthDate: birthDateISO,
+                              email: _emailController.text.trim().isNotEmpty
+                                  ? _emailController.text.trim()
+                                  : null,
+                              city: _selectedCity?.name,
+                              town: _selectedTown?.name,
+                              quarter: _selectedQuarter?.name,
+                              street: _streetController.text.trim().isNotEmpty
+                                  ? _streetController.text.trim()
+                                  : null,
+                              latitude: _selectedLat,
+                              longitude: _selectedLong,
                             );
                             
                             if (!mounted) return;

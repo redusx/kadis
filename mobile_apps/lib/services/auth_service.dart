@@ -61,6 +61,13 @@ class AuthService {
     String? gender,
     String? birthDate,
     int? weight,
+    String? email,
+    String? city,
+    String? town,
+    String? quarter,
+    String? street,
+    double? latitude,
+    double? longitude,
   }) async {
     final body = <String, dynamic>{
       'phoneNumber': phoneNumber,
@@ -75,6 +82,13 @@ class AuthService {
     if (gender != null) body['gender'] = gender;
     if (birthDate != null) body['birthDate'] = birthDate;
     if (weight != null) body['weight'] = weight;
+    if (email != null && email.isNotEmpty) body['email'] = email;
+    if (city != null && city.isNotEmpty) body['city'] = city;
+    if (town != null && town.isNotEmpty) body['town'] = town;
+    if (quarter != null && quarter.isNotEmpty) body['quarter'] = quarter;
+    if (street != null && street.isNotEmpty) body['street'] = street;
+    if (latitude != null) body['latitude'] = latitude;
+    if (longitude != null) body['longitude'] = longitude;
 
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiConfig.authSignup,

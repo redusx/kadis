@@ -4,6 +4,7 @@
 class UserProfile {
   final String id;
   final String phoneNumber;
+  final String? email;
   final String role;
   final bool isVerified;
   final bool kvkkConsent;
@@ -13,6 +14,7 @@ class UserProfile {
   UserProfile({
     required this.id,
     required this.phoneNumber,
+    this.email,
     required this.role,
     required this.isVerified,
     required this.kvkkConsent,
@@ -24,6 +26,7 @@ class UserProfile {
     return UserProfile(
       id: json['id'] as String,
       phoneNumber: json['phoneNumber'] as String,
+      email: json['email'] as String?,
       role: json['role'] as String,
       isVerified: json['isVerified'] as bool? ?? false,
       kvkkConsent: json['kvkkConsent'] as bool? ?? false,
@@ -60,6 +63,10 @@ class DonorProfileModel {
   final DateTime? lastDonationDate;
   final int totalDonations;
   final double trustScore;
+  final String? city;
+  final String? town;
+  final String? quarter;
+  final String? street;
 
   DonorProfileModel({
     required this.id,
@@ -72,6 +79,10 @@ class DonorProfileModel {
     this.lastDonationDate,
     required this.totalDonations,
     required this.trustScore,
+    this.city,
+    this.town,
+    this.quarter,
+    this.street,
   });
 
   factory DonorProfileModel.fromJson(Map<String, dynamic> json) {
@@ -88,7 +99,21 @@ class DonorProfileModel {
           : null,
       totalDonations: json['totalDonations'] as int? ?? 0,
       trustScore: (json['trustScore'] as num?)?.toDouble() ?? 10.0,
+      city: json['city'] as String?,
+      town: json['town'] as String?,
+      quarter: json['quarter'] as String?,
+      street: json['street'] as String?,
     );
+  }
+
+  /// Adres bilgisini okunabilir formatta döndürür
+  String get addressDisplay {
+    final parts = <String>[];
+    if (quarter != null && quarter!.isNotEmpty) parts.add(quarter!);
+    if (street != null && street!.isNotEmpty) parts.add(street!);
+    if (town != null && town!.isNotEmpty) parts.add(town!);
+    if (city != null && city!.isNotEmpty) parts.add(city!);
+    return parts.isNotEmpty ? parts.join(', ') : 'Belirtilmemiş';
   }
 
   /// Kan grubunu okunabilir formatta döndürür (A_RH_POS → A+)

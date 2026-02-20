@@ -18,7 +18,7 @@ export class UserService {
    * Donor profil alanları varsa DonorProfile da oluşturulur
    */
   async createWithProfile(
-    userData: { phoneNumber: string; password: string; role?: any },
+    userData: { phoneNumber: string; password: string; role?: any; email?: string },
     donorData: {
       firstName?: string;
       lastName?: string;
@@ -26,6 +26,12 @@ export class UserService {
       gender?: any;
       birthDate?: string;
       weight?: number;
+      city?: string;
+      town?: string;
+      quarter?: string;
+      street?: string;
+      latitude?: number;
+      longitude?: number;
     },
   ) {
     // Donor profil alanları dolu mu kontrol et
@@ -37,6 +43,7 @@ export class UserService {
         data: {
           phoneNumber: userData.phoneNumber,
           password: userData.password,
+          email: userData.email || null,
           role: userData.role || 'DONOR',
           donorProfile: {
             create: {
@@ -46,6 +53,12 @@ export class UserService {
               gender: donorData.gender!,
               birthDate: new Date(donorData.birthDate!),
               weight: donorData.weight || null,
+              city: donorData.city || null,
+              town: donorData.town || null,
+              quarter: donorData.quarter || null,
+              street: donorData.street || null,
+              latitude: donorData.latitude || null,
+              longitude: donorData.longitude || null,
             },
           },
         },
@@ -59,6 +72,7 @@ export class UserService {
         data: {
           phoneNumber: userData.phoneNumber,
           password: userData.password,
+          email: userData.email || null,
           role: userData.role || 'DONOR',
         },
       });
@@ -113,6 +127,7 @@ export class UserService {
       select: {
         id: true,
         phoneNumber: true,
+        email: true,
         role: true,
         isVerified: true,
         kvkkConsent: true,
@@ -129,6 +144,10 @@ export class UserService {
             lastDonationDate: true,
             totalDonations: true,
             trustScore: true,
+            city: true,
+            town: true,
+            quarter: true,
+            street: true,
           },
         },
       },

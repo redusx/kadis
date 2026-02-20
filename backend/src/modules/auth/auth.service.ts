@@ -49,9 +49,9 @@ export class AuthService {
         throw new Error('Password hashing failed');
       }
 
-      // Donor profile alanlarını ayır
-      const { firstName, lastName, bloodType, gender, birthDate, weight, ...userData } = createUserDto;
-      const newUserDto = { ...userData, password: hashedPassword };
+      // Donor profile alanlarını ve adres alanlarını ayır
+      const { firstName, lastName, bloodType, gender, birthDate, weight, email, city, town, quarter, street, latitude, longitude, ...userData } = createUserDto;
+      const newUserDto = { ...userData, password: hashedPassword, email };
 
       const resp = await this.userService.createWithProfile(newUserDto, {
         firstName,
@@ -60,6 +60,12 @@ export class AuthService {
         gender,
         birthDate,
         weight,
+        city,
+        town,
+        quarter,
+        street,
+        latitude,
+        longitude,
       });
 
       if (resp) {
