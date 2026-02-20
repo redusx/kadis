@@ -28,22 +28,28 @@ class AuthService {
     );
 
     if (response.success && response.data != null) {
-      // Backend TransformInterceptor yanıtı { success, data: { access_token } } şeklinde sarar
-      // Bu yüzden token 'data' anahtarının içinde olabilir
+      // Backend TransformInterceptor yanıtı { success, data: { access_token, userId } } şeklinde sarar
       final responseData = response.data!;
       final String? token;
+      final String? userId;
       
       if (responseData.containsKey('data') && responseData['data'] is Map) {
-        // Wrapped response: { data: { access_token: "..." } }
-        token = (responseData['data'] as Map<String, dynamic>)['access_token'] as String?;
+        // Wrapped response: { data: { access_token: "...", userId: "..." } }
+        final innerData = responseData['data'] as Map<String, dynamic>;
+        token = innerData['access_token'] as String?;
+        userId = innerData['userId'] as String?;
       } else {
-        // Direct response: { access_token: "..." }
+        // Direct response: { access_token: "...", userId: "..." }
         token = responseData['access_token'] as String?;
+        userId = responseData['userId'] as String?;
       }
       
       if (token != null) {
         await TokenStorage.saveToken(token);
         await TokenStorage.savePhoneNumber(phoneNumber);
+      }
+      if (userId != null) {
+        await TokenStorage.saveUserId(userId);
       }
     }
 

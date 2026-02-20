@@ -17,7 +17,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) { }
 
-  async signIn(phoneNumber: string, pass: string,): Promise<{ access_token: string }> {
+  async signIn(phoneNumber: string, pass: string,): Promise<{ access_token: string; userId: string }> {
     const user = await this.userService.findOneByPhoneNumber(phoneNumber);
 
     const isPasswordValid =
@@ -34,6 +34,7 @@ export class AuthService {
 
     return {
       access_token: await this.jwtService.signAsync(payload),
+      userId: user.id,
     };
   }
 

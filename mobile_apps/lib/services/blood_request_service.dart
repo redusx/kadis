@@ -51,12 +51,24 @@ class BloodRequestService {
 
   /// Tüm kan taleplerini listele
   Future<ApiResponse<List<BloodRequest>>> getAllRequests() async {
-    final response = await _apiClient.get<List<dynamic>>(
+    final response = await _apiClient.get<Map<String, dynamic>>(
       ApiConfig.request,
     );
 
     if (response.success && response.data != null) {
-      final requests = response.data!
+      // Backend TransformInterceptor yanıtı: { success: true, data: [...] }
+      final responseData = response.data!;
+      final List<dynamic> list;
+
+      if (responseData.containsKey('data') && responseData['data'] is List) {
+        list = responseData['data'] as List<dynamic>;
+      } else if (responseData is List) {
+        list = responseData as List<dynamic>;
+      } else {
+        list = [];
+      }
+
+      final requests = list
           .map((json) => BloodRequest.fromJson(json as Map<String, dynamic>))
           .toList();
       return ApiResponse.success(requests, statusCode: response.statusCode);
@@ -74,7 +86,7 @@ class BloodRequestService {
     required double longitude,
     double radiusKm = 10,
   }) async {
-    final response = await _apiClient.get<List<dynamic>>(
+    final response = await _apiClient.get<Map<String, dynamic>>(
       ApiConfig.requestNearby,
       queryParams: {
         'lat': latitude.toString(),
@@ -83,7 +95,18 @@ class BloodRequestService {
     );
 
     if (response.success && response.data != null) {
-      final requests = response.data!
+      final responseData = response.data!;
+      final List<dynamic> list;
+
+      if (responseData.containsKey('data') && responseData['data'] is List) {
+        list = responseData['data'] as List<dynamic>;
+      } else if (responseData is List) {
+        list = responseData as List<dynamic>;
+      } else {
+        list = [];
+      }
+
+      final requests = list
           .map((json) => BloodRequest.fromJson(json as Map<String, dynamic>))
           .toList();
       return ApiResponse.success(requests, statusCode: response.statusCode);

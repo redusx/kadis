@@ -5,7 +5,9 @@ import '../../widgets/request_card.dart';
 import '../../widgets/dialogs/request_popup_dialog.dart';
 import '../../widgets/hospital_bottom_sheet.dart';
 import '../../models/hospital_model.dart';
+import '../../models/blood_request_model.dart';
 import '../../services/hospital_service.dart';
+import '../../services/blood_request_service.dart';
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
@@ -27,10 +29,17 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Hospital> _hospitals = [];
   bool _isLoadingHospitals = true;
 
+  // Request data
+  List<BloodRequest> _activeRequests = [];
+  bool _isLoadingRequests = true;
+
+  final BloodRequestService _requestService = BloodRequestService();
+
   @override
   void initState() {
     super.initState();
     _loadHospitals();
+    _loadActiveRequests();
   }
 
   Future<void> _loadHospitals() async {
@@ -43,31 +52,49 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadActiveRequests() async {
+    setState(() => _isLoadingRequests = true);
+    try {
+      final response = await _requestService.getAllRequests();
+      if (mounted && response.success && response.data != null) {
+        setState(() {
+          // Sadece PENDING ve ACTIVE talepleri göster
+          _activeRequests = response.data!
+              .where((r) =>
+                  r.status == RequestStatus.pending ||
+                  r.status == RequestStatus.active)
+              .toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Talepler yüklenemedi: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingRequests = false);
+    }
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
     
     if (index == 1) {
-      // Navigate to Create Request
-      Navigator.pushNamed(context, AppRoutes.createRequest);
+      // Navigate to Create Request and refresh on return
+      Navigator.pushNamed(context, AppRoutes.createRequest).then((result) {
+        if (result == true) _loadActiveRequests();
+      });
     } else if (index == 2) {
-      // Navigate to Profile
       Navigator.pushNamed(context, AppRoutes.profile);
     }
   }
 
-  void _showRequestDialog() {
+  void _showRequestDialog(BloodRequest request) {
     showDialog(
       context: context,
-      builder: (context) => const RequestPopupDialog(
-        patientName: 'Mehmet Yılmaz',
-        bloodType: 'A+',
-        hospital: 'Şişli Etfal Hastanesi',
-        note: 'Acil kan ihtiyacı var',
-        donorContactInfo: 'Tel: 0532 123 45 67',
-      ),
-    );
+      builder: (context) => RequestPopupDialog(request: request),
+    ).then((result) {
+      if (result == true) _loadActiveRequests();
+    });
   }
 
   @override
@@ -109,62 +136,110 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: _isMapExpanded
           ? _buildMapWidget(isExpanded: true)
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Map Container
-                  _buildMapWidget(isExpanded: false),
-                  
-                  // Taleplerim Button
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, AppRoutes.requestsList);
-                        },
-                        child: const Text('Taleplerim'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.spacingLarge),
-                  
-                  // Request Status Section
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
-                        child: Text(
-                          'Aktif Çağrılar',
-                          textAlign: TextAlign.start,
-                          style: TextStyle(
-                            color: AppTheme.foreground,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
+          : RefreshIndicator(
+              onRefresh: _loadActiveRequests,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Map Container
+                    _buildMapWidget(isExpanded: false),
+                    
+                    // Taleplerim Button
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, AppRoutes.requestsList).then((_) {
+                              _loadActiveRequests();
+                            });
+                          },
+                          child: const Text('Taleplerim'),
                         ),
                       ),
-                      const SizedBox(height: AppTheme.spacingMedium),
-                      
-                      // Sample Request Cards
-                      RequestCard(
-                        hospitalName: 'Şişli Etfal Hastanesi',
-                        bloodType: 'A+',
-                        patientName: 'Mehmet Yılmaz',
-                        onTap: _showRequestDialog,
-                      ),
-                      RequestCard(
-                        hospitalName: 'Bakırköy Dr. Sadi Konuk EAH',
-                        bloodType: '0-',
-                        patientName: 'Ayşe Demir',
-                        onTap: _showRequestDialog,
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: AppTheme.spacingLarge),
+                    
+                    // Request Status Section
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: AppTheme.defaultPadding),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Aktif Çağrılar',
+                                textAlign: TextAlign.start,
+                                style: TextStyle(
+                                  color: AppTheme.foreground,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (!_isLoadingRequests)
+                                Text(
+                                  '${_activeRequests.length} talep',
+                                  style: TextStyle(
+                                    color: AppTheme.foreground.withOpacity(0.6),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppTheme.spacingMedium),
+                        
+                        // Request Cards
+                        if (_isLoadingRequests)
+                          const Padding(
+                            padding: EdgeInsets.all(32),
+                            child: Center(child: CircularProgressIndicator()),
+                          )
+                        else if (_activeRequests.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.inbox_outlined,
+                                    size: 48,
+                                    color: AppTheme.foreground.withOpacity(0.3),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Aktif çağrı bulunamadı',
+                                    style: TextStyle(
+                                      color: AppTheme.foreground.withOpacity(0.5),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          ...List.generate(_activeRequests.length, (index) {
+                            final request = _activeRequests[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: RequestCard(
+                                request: request,
+                                onTap: () => _showRequestDialog(request),
+                              ),
+                            );
+                          }),
+                        
+                        const SizedBox(height: AppTheme.spacingLarge),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
     );

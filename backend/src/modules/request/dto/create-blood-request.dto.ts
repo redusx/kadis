@@ -5,11 +5,12 @@ import {
   IsNumber,
   IsEnum,
   IsUUID,
+  IsOptional,
   Min,
   Max,
 } from 'class-validator';
 import { BloodType, Urgency } from '@prisma/client';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateBloodRequestDto {
   @ApiProperty({ example: 'manuel-test-id-1' })
@@ -46,4 +47,9 @@ export class CreateBloodRequestDto {
   @ApiProperty({ enum: Urgency, example: Urgency.HIGH })
   @IsEnum(Urgency)
   urgency: Urgency;
+
+  @ApiPropertyOptional({ example: 'Acil kan ihtiyacı' })
+  @IsOptional()
+  @IsString()
+  description?: string;
 }
