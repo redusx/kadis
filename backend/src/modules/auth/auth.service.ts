@@ -15,27 +15,27 @@ export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
-  async signIn(phoneNumber: string,pass: string,): Promise<{ access_token: string }> {
-  const user = await this.userService.findOneByPhoneNumber(phoneNumber);
+  async signIn(phoneNumber: string, pass: string,): Promise<{ access_token: string }> {
+    const user = await this.userService.findOneByPhoneNumber(phoneNumber);
 
-  const isPasswordValid =
-    user && (await bcrypt.compare(pass, user.password));
+    const isPasswordValid =
+      user && (await bcrypt.compare(pass, user.password));
 
-  if (!isPasswordValid) {
-    throw new UnauthorizedException('Invalid credentials');
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = {
+      sub: user.id,
+      phoneNumber: user.phoneNumber,
+    };
+
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+    };
   }
-
-  const payload = {
-    sub: user.id,
-    phoneNumber: user.phoneNumber,
-  };
-
-  return {
-    access_token: await this.jwtService.signAsync(payload),
-  };
-}
 
 
   async signUp(createUserDto: CreateUserDto) {
@@ -48,8 +48,20 @@ export class AuthService {
       if (!hashedPassword) {
         throw new Error('Password hashing failed');
       }
-      const newUserDto = { ...createUserDto, password: hashedPassword };
-      const resp = await this.userService.create(newUserDto);
+
+      // Donor profile alanlarını ayır
+      const { firstName, lastName, bloodType, gender, birthDate, weight, ...userData } = createUserDto;
+      const newUserDto = { ...userData, password: hashedPassword };
+
+      const resp = await this.userService.createWithProfile(newUserDto, {
+        firstName,
+        lastName,
+        bloodType,
+        gender,
+        birthDate,
+        weight,
+      });
+
       if (resp) {
         return { message: 'User registered successfully' };
       } else {

@@ -28,13 +28,22 @@ class AuthService {
     );
 
     if (response.success && response.data != null) {
-      final token = response.data!['access_token'] as String?;
+      // Backend TransformInterceptor yanıtı { success, data: { access_token } } şeklinde sarar
+      // Bu yüzden token 'data' anahtarının içinde olabilir
+      final responseData = response.data!;
+      final String? token;
+      
+      if (responseData.containsKey('data') && responseData['data'] is Map) {
+        // Wrapped response: { data: { access_token: "..." } }
+        token = (responseData['data'] as Map<String, dynamic>)['access_token'] as String?;
+      } else {
+        // Direct response: { access_token: "..." }
+        token = responseData['access_token'] as String?;
+      }
+      
       if (token != null) {
         await TokenStorage.saveToken(token);
         await TokenStorage.savePhoneNumber(phoneNumber);
-        
-        // Token'dan user bilgilerini decode edebiliriz (opsiyonel)
-        // Şimdilik sadece token'ı saklıyoruz
       }
     }
 
@@ -46,14 +55,30 @@ class AuthService {
     required String phoneNumber,
     required String password,
     String role = 'DONOR',
+    String? firstName,
+    String? lastName,
+    String? bloodType,
+    String? gender,
+    String? birthDate,
+    int? weight,
   }) async {
+    final body = <String, dynamic>{
+      'phoneNumber': phoneNumber,
+      'password': password,
+      'role': role,
+    };
+
+    // Donor profile alanlarını ekle (varsa)
+    if (firstName != null) body['firstName'] = firstName;
+    if (lastName != null) body['lastName'] = lastName;
+    if (bloodType != null) body['bloodType'] = bloodType;
+    if (gender != null) body['gender'] = gender;
+    if (birthDate != null) body['birthDate'] = birthDate;
+    if (weight != null) body['weight'] = weight;
+
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiConfig.authSignup,
-      body: {
-        'phoneNumber': phoneNumber,
-        'password': password,
-        'role': role,
-      },
+      body: body,
     );
 
     return response;

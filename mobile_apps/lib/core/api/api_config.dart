@@ -2,9 +2,9 @@
 /// Base URL ve timeout ayarları
 
 class ApiConfig {
-  // Fiziksel cihaz için local IP adresi kullanılıyor
-  // Emulator için: http://10.0.2.2:3000 (Android) veya http://localhost:3000 (iOS)
-  static const String baseUrl = 'http://192.168.1.105:3000';
+  // ADB reverse port forwarding: adb reverse tcp:3000 tcp:3000
+  // Telefondaki localhost:3000 → bilgisayarın localhost:3000'e yönlendirilir (USB üzerinden)
+  static const String baseUrl = 'http://localhost:3000';
   
   static const Duration timeout = Duration(seconds: 30);
   

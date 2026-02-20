@@ -533,10 +533,40 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
                           });
                           
                           try {
+                            // Kan grubu UI → Backend enum dönüşümü
+                            String? bloodTypeEnum;
+                            if (_selectedBloodType != null) {
+                              final bloodTypeMap = {
+                                'A+': 'A_RH_POS', 'A-': 'A_RH_NEG',
+                                'B+': 'B_RH_POS', 'B-': 'B_RH_NEG',
+                                'AB+': 'AB_RH_POS', 'AB-': 'AB_RH_NEG',
+                                '0+': 'O_RH_POS', '0-': 'O_RH_NEG',
+                              };
+                              bloodTypeEnum = bloodTypeMap[_selectedBloodType];
+                            }
+
+                            // Doğum tarihi dönüşümü (dd/MM/yyyy → yyyy-MM-dd)
+                            String? birthDateISO;
+                            if (_birthDateController.text.isNotEmpty) {
+                              final parts = _birthDateController.text.split('/');
+                              if (parts.length == 3) {
+                                birthDateISO = '${parts[2]}-${parts[1].padLeft(2, '0')}-${parts[0].padLeft(2, '0')}';
+                              }
+                            }
+
                             final response = await _authService.signup(
                               phoneNumber: phone,
                               password: password,
                               role: 'DONOR',
+                              firstName: _firstNameController.text.trim().isNotEmpty
+                                  ? _firstNameController.text.trim()
+                                  : null,
+                              lastName: _lastNameController.text.trim().isNotEmpty
+                                  ? _lastNameController.text.trim()
+                                  : null,
+                              bloodType: bloodTypeEnum,
+                              gender: 'MALE', // TODO: Kayıt formuna cinsiyet seçimi eklenebilir
+                              birthDate: birthDateISO,
                             );
                             
                             if (!mounted) return;
