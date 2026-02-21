@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../screens/auth/login_screen.dart';
+import '../../screens/auth/splash_screen.dart';
 import '../../screens/auth/register_screen.dart';
 import '../../screens/auth/forgot_password_screen.dart';
 import '../../screens/auth/reset_password_screen.dart';
@@ -10,7 +11,8 @@ import '../../screens/request/requests_list_screen.dart';
 
 class AppRoutes {
   // Route names
-  static const String login = '/';
+  static const String splash = '/';
+  static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
@@ -22,6 +24,8 @@ class AppRoutes {
   // Route generator
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case splash:
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
       case login:
         return MaterialPageRoute(builder: (_) => const LoginScreen());
       case register:

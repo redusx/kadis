@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
   
   bool _isLoading = false;
+  bool _rememberMe = false;
   String? _errorMessage;
 
   @override
@@ -47,6 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final response = await _authService.login(
         phoneNumber: phone,
         password: password,
+        rememberMe: _rememberMe,
       );
 
       if (!mounted) return;
@@ -144,7 +146,44 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: true,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 8),
+                
+                // Beni Hatırla Checkbox
+                Row(
+                  children: [
+                    SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: Checkbox(
+                        value: _rememberMe,
+                        onChanged: (value) {
+                          setState(() {
+                            _rememberMe = value ?? false;
+                          });
+                        },
+                        activeColor: AppTheme.foreground,
+                        checkColor: AppTheme.background,
+                        side: const BorderSide(color: AppTheme.foreground),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _rememberMe = !_rememberMe;
+                        });
+                      },
+                      child: const Text(
+                        'Beni Hatırla',
+                        style: TextStyle(
+                          color: AppTheme.foreground,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 
                 // Login Button
                 SizedBox(

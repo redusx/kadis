@@ -7,6 +7,7 @@ class TokenStorage {
   static const String _tokenKey = 'jwt_token';
   static const String _userIdKey = 'user_id';
   static const String _phoneNumberKey = 'phone_number';
+  static const String _rememberMeKey = 'remember_me';
 
   /// Token kaydet
   static Future<void> saveToken(String token) async {
@@ -56,11 +57,24 @@ class TokenStorage {
     return prefs.getString(_phoneNumberKey);
   }
 
+  /// Beni Hatırla bayrağını kaydet
+  static Future<void> saveRememberMe(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_rememberMeKey, value);
+  }
+
+  /// Beni Hatırla bayrağını al
+  static Future<bool> getRememberMe() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_rememberMeKey) ?? false;
+  }
+
   /// Tüm verileri temizle (logout)
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userIdKey);
     await prefs.remove(_phoneNumberKey);
+    await prefs.remove(_rememberMeKey);
   }
 }

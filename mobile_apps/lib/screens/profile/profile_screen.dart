@@ -3,6 +3,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/routes/app_routes.dart';
 import '../../widgets/dialogs/legal_text_dialog.dart';
 import '../../services/user_service.dart';
+import '../../services/auth_service.dart';
 import '../../services/token_storage.dart';
 import '../../models/user_model.dart';
 
@@ -66,6 +67,110 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _showLogoutConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+          side: const BorderSide(color: AppTheme.stroke, width: AppTheme.strokeThin),
+        ),
+        title: const Text(
+          'Çıkış Yap',
+          style: TextStyle(color: AppTheme.foreground),
+        ),
+        content: const Text(
+          'Gerçekten çıkmak istiyor musunuz?',
+          style: TextStyle(color: AppTheme.foreground),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal', style: TextStyle(color: AppTheme.foreground)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _logout();
+            },
+            child: const Text('Evet, Çıkış Yap'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+          side: BorderSide(color: Colors.red.withOpacity(0.5), width: AppTheme.strokeThin),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text(
+              'Hesabı Sil',
+              style: TextStyle(color: Colors.red),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Hesabınız kalıcı olarak silinecektir. Bu işlem geri alınamaz. Emin misiniz?',
+          style: TextStyle(color: AppTheme.foreground),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal', style: TextStyle(color: AppTheme.foreground)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteAccount();
+            },
+            child: const Text('Evet, Hesabı Sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    setState(() => _isLoading = true);
+    try {
+      final response = await AuthService().deleteAccount();
+      if (!mounted) return;
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Hesabınız başarıyla silindi')),
+        );
+        Navigator.pushReplacementNamed(context, AppRoutes.login);
+      } else {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response.message ?? 'Hesap silinemedi')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            onPressed: _logout,
+            onPressed: _showLogoutConfirmation,
             icon: const Icon(
               Icons.logout,
               color: AppTheme.foreground,
@@ -321,6 +426,28 @@ Aydınlatma Metni kapsamında, verilerinizin işlenme amaçları...
               ),
             ),
           ),
+
+          const SizedBox(height: 24),
+
+          // Hesabı Sil Butonu
+          SizedBox(
+            height: 52,
+            child: OutlinedButton.icon(
+              onPressed: _showDeleteConfirmation,
+              icon: const Icon(Icons.delete_forever, color: Colors.red),
+              label: const Text(
+                'Hesabımı Sil',
+                style: TextStyle(color: Colors.red),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
         ],
       ),
     );

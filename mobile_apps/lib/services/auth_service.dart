@@ -18,6 +18,7 @@ class AuthService {
   Future<ApiResponse<Map<String, dynamic>>> login({
     required String phoneNumber,
     required String password,
+    bool rememberMe = false,
   }) async {
     final response = await _apiClient.post<Map<String, dynamic>>(
       ApiConfig.authLogin,
@@ -47,6 +48,7 @@ class AuthService {
       if (token != null) {
         await TokenStorage.saveToken(token);
         await TokenStorage.savePhoneNumber(phoneNumber);
+        await TokenStorage.saveRememberMe(rememberMe);
       }
       if (userId != null) {
         await TokenStorage.saveUserId(userId);
@@ -112,6 +114,28 @@ class AuthService {
   /// Giriş yapılmış mı kontrol et
   Future<bool> isLoggedIn() async {
     return await TokenStorage.hasToken();
+  }
+
+  /// Otomatik giriş denemesi
+  /// "Beni Hatırla" aktifse ve geçerli token varsa true döner
+  Future<bool> tryAutoLogin() async {
+    final rememberMe = await TokenStorage.getRememberMe();
+    if (!rememberMe) return false;
+
+    final token = await TokenStorage.getToken();
+    if (token == null || token.isEmpty) return false;
+
+    try {
+      // Token'ın hâlâ geçerli olup olmadığını backend'e sorarak kontrol et
+      final response = await _apiClient.get<Map<String, dynamic>>(
+        ApiConfig.userProfile,
+        requiresAuth: true,
+      );
+      return response.success;
+    } catch (e) {
+      // Token geçersiz veya bağlantı hatası → otomatik giriş başarısız
+      return false;
+    }
   }
 
   /// Mevcut token'ı al
