@@ -15,7 +15,6 @@ export class FirebaseService implements OnModuleInit {
     }
   }
 
-
   async verifyToken(token: string) {
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);

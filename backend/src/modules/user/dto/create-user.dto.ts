@@ -1,6 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Role, BloodType, Gender } from '@prisma/client';
-import { IsPhoneNumber, IsString, MinLength, IsOptional, IsEnum, IsDateString, IsInt, Min, IsEmail, IsNumber } from 'class-validator';
+import {
+  IsPhoneNumber,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsEnum,
+  IsDateString,
+  IsInt,
+  Min,
+  IsEmail,
+  IsNumber,
+} from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({ example: '5551234567' })

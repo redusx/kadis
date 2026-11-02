@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { BloodType, Gender, Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { DatabaseService } from '../../core/database/database.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly databaseService: DatabaseService) { }
+  constructor(private readonly databaseService: DatabaseService) {}
 
   create(createUserDto: CreateUserDto) {
     return this.databaseService.user.create({
@@ -18,12 +19,17 @@ export class UserService {
    * Donor profil alanları varsa DonorProfile da oluşturulur
    */
   async createWithProfile(
-    userData: { phoneNumber: string; password: string; role?: any; email?: string },
+    userData: {
+      phoneNumber: string;
+      password: string;
+      role?: Role;
+      email?: string;
+    },
     donorData: {
       firstName?: string;
       lastName?: string;
-      bloodType?: any;
-      gender?: any;
+      bloodType?: BloodType;
+      gender?: Gender;
       birthDate?: string;
       weight?: number;
       city?: string;
@@ -35,7 +41,12 @@ export class UserService {
     },
   ) {
     // Donor profil alanları dolu mu kontrol et
-    const hasDonorData = donorData.firstName && donorData.lastName && donorData.bloodType && donorData.gender && donorData.birthDate;
+    const hasDonorData =
+      donorData.firstName &&
+      donorData.lastName &&
+      donorData.bloodType &&
+      donorData.gender &&
+      donorData.birthDate;
 
     if (hasDonorData) {
       // User + DonorProfile birlikte oluştur
@@ -96,7 +107,7 @@ export class UserService {
 
   patch(id: string, updateUserDto: UpdateUserDto) {
     const data = Object.fromEntries(
-      Object.entries(updateUserDto).filter(([_, v]) => v !== undefined),
+      Object.entries(updateUserDto).filter(([, v]) => v !== undefined),
     );
 
     return this.databaseService.user.update({
@@ -115,13 +126,13 @@ export class UserService {
     });
   }
 
-  async findOneByPhoneNumber(phoneNumber: string): Promise<any> {
+  async findOneByPhoneNumber(phoneNumber: string) {
     return this.databaseService.user.findUnique({
       where: { phoneNumber: phoneNumber },
     });
   }
 
-  async findOneById(id: string): Promise<any> {
+  async findOneById(id: string) {
     return this.databaseService.user.findUnique({
       where: { id: id },
       select: {

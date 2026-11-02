@@ -7,23 +7,21 @@ import * as bcrypt from 'bcrypt';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../user/dto/create-user.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
-import { CreateAuthDto } from './dto/create-auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
-  ) { }
+  ) {}
 
-  async signIn(phoneNumber: string, pass: string,): Promise<{ access_token: string; userId: string }> {
+  async signIn(
+    phoneNumber: string,
+    pass: string,
+  ): Promise<{ access_token: string; userId: string }> {
     const user = await this.userService.findOneByPhoneNumber(phoneNumber);
 
-    const isPasswordValid =
-      user && (await bcrypt.compare(pass, user.password));
-
-    if (!isPasswordValid) {
+    if (!user || !(await bcrypt.compare(pass, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -38,9 +36,10 @@ export class AuthService {
     };
   }
 
-
   async signUp(createUserDto: CreateUserDto) {
-    const existingUser = await this.userService.findOneByPhoneNumber(createUserDto.phoneNumber);
+    const existingUser = await this.userService.findOneByPhoneNumber(
+      createUserDto.phoneNumber,
+    );
     if (existingUser) {
       throw new ConflictException('Phone number already exists');
     }
@@ -51,7 +50,22 @@ export class AuthService {
       }
 
       // Donor profile alanlarını ve adres alanlarını ayır
-      const { firstName, lastName, bloodType, gender, birthDate, weight, email, city, town, quarter, street, latitude, longitude, ...userData } = createUserDto;
+      const {
+        firstName,
+        lastName,
+        bloodType,
+        gender,
+        birthDate,
+        weight,
+        email,
+        city,
+        town,
+        quarter,
+        street,
+        latitude,
+        longitude,
+        ...userData
+      } = createUserDto;
       const newUserDto = { ...userData, password: hashedPassword, email };
 
       const resp = await this.userService.createWithProfile(newUserDto, {
@@ -75,32 +89,12 @@ export class AuthService {
         throw new Error('User creation failed');
       }
     } catch (error) {
-      throw new Error('User registration failed: ' + error.message);
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error('User registration failed: ' + reason);
     }
   }
 
   async deleteProfile(userId: string) {
     return this.userService.remove(userId);
-  }
-
-  // The following are unused placeholder methods and can be ignored for now.
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
-
-  findAll() {
-    return `This action returns all auth`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
-  }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
   }
 }

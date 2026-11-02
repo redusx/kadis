@@ -7,10 +7,10 @@ import {
   Request,
   UseGuards,
   Delete,
-  ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
+import type { AuthenticatedRequest } from './auth.guard';
 import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UserLoginDto } from './dto/login-user.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -24,7 +24,7 @@ export class AuthController {
   signIn(@Body() signInDto: UserLoginDto) {
     return this.authService.signIn(signInDto.phoneNumber, signInDto.password);
   }
-  
+
   @Post('signup')
   async signup(@Body() createUserDto: CreateUserDto) {
     return this.authService.signUp(createUserDto);
@@ -33,7 +33,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
   @Delete('delete')
-  deleteProfile(@Request() req) {
+  deleteProfile(@Request() req: AuthenticatedRequest) {
     return this.authService.deleteProfile(req.user.id);
   }
 }

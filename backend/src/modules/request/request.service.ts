@@ -4,6 +4,21 @@ import { DatabaseService } from '../../core/database/database.service';
 import { CreateBloodRequestDto } from './dto/create-blood-request.dto';
 import { BloodType } from '@prisma/client';
 
+export interface CompatibleDonor {
+  userId: string;
+  phoneNumber: string;
+  firstName: string;
+  lastName: string;
+  bloodType: BloodType;
+  trustScore: number;
+  distance_meters: number;
+}
+
+interface NearestCenter {
+  name: string;
+  address: string;
+  distance_meters: number;
+}
 
 @Injectable()
 export class RequestService {
@@ -58,8 +73,8 @@ export class RequestService {
   async findCompatibleDonors(lat: number, lon: number, bloodType: BloodType) {
     const radiusInMeters = 5000;
 
-    const donors = await this.database.$queryRaw`
-      SELECT 
+    const donors = await this.database.$queryRaw<CompatibleDonor[]>`
+      SELECT
         u.id as "userId",
         u."phoneNumber",
         dp."firstName",
@@ -82,7 +97,7 @@ export class RequestService {
       ORDER BY distance_meters ASC;
     `;
 
-    return donors as any[];
+    return donors;
   }
 
   async findNearbyRequests(lat: number, lon: number, radiusKm: number = 10) {
@@ -130,7 +145,7 @@ export class RequestService {
     if (bloodRequest.status !== 'PENDING')
       throw new Error('Bu talep artık aktif değil.');
 
-    const nearestCenter: any[] = await this.database.$queryRaw`
+    const nearestCenter = await this.database.$queryRaw<NearestCenter[]>`
       SELECT 
         hp.name,
         hp.address,

@@ -8,6 +8,11 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { UserService } from '../user/user.service';
 
+// AuthGuard'dan geçen isteklerde user alanı dolu olur
+export interface AuthenticatedRequest extends Request {
+  user: NonNullable<Awaited<ReturnType<UserService['findOneById']>>>;
+}
+
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
@@ -16,7 +21,7 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
@@ -24,7 +29,9 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtService.verifyAsync<{ sub?: string }>(
+        token,
+      );
 
       const userId = payload.sub;
       if (!userId) {
@@ -36,7 +43,7 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException();
       }
 
-      request['user'] = user;
+      request.user = user;
       return true;
     } catch {
       throw new UnauthorizedException();

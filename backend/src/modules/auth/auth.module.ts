@@ -7,15 +7,15 @@ import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
-    UserModule,//bunun için user.module import ettik
-
+    UserModule, //bunun için user.module import ettik
 
     //JWT Configuration
-    JwtModule.registerAsync({//bunun için jwtModule import ettik
+    JwtModule.registerAsync({
+      //bunun için jwtModule import ettik
       global: true,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),//.env dosyasından okunuyor
+        secret: config.getOrThrow<string>('JWT_SECRET'), //.env dosyasından okunuyor
         signOptions: { expiresIn: '15d' },
       }),
     }),
@@ -23,9 +23,8 @@ import { ConfigService } from '@nestjs/config';
 
   controllers: [AuthController],
   providers: [AuthService],
-  exports:[AuthService] //Bu exportu ekledik
+  exports: [AuthService], //Bu exportu ekledik
 })
 export class AuthModule {}
-
 
 // JWT + Service + Controller
