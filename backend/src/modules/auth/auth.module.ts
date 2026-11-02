@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from './constants';
+import { ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -11,10 +11,13 @@ import { jwtConstants } from './constants';
 
 
     //JWT Configuration
-    JwtModule.register({//bunun için jwtModule import ettik
+    JwtModule.registerAsync({//bunun için jwtModule import ettik
       global: true,
-      secret: jwtConstants.secret,//constants.ts'i import edip oradaki ifadeyi kullanıyoruz
-      signOptions: { expiresIn: '15d' },
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_SECRET'),//.env dosyasından okunuyor
+        signOptions: { expiresIn: '15d' },
+      }),
     }),
   ],
 
